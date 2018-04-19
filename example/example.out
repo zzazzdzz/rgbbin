@@ -1,0 +1,12 @@
+Section 'WRAM':
+Contents:
+21 22 D3 C3 22 D3 CD 22 D3 11 09 00 00 00 00 18 F8
+Section 'SRAM':
+Contents:
+78 41 4A C3 00 A0 C3 01 A0 C3 02 A0
+Symbols:
+Start - address $D322
+Test - address $D32B
+Potato - address $A000
+Tomato - address $A001
+Cheese - address $A002
