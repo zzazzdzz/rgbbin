@@ -35,10 +35,11 @@ class ObjectFile():
         self.f.close()
 
     def read_byte(self):
-        return read(self.f,[1])[0]
+        q = self.f.read(1)[0]
+        return q
 
     def read_bytes(self, l):
-        return read(self.f,[l])
+        return self.f.read(l)
 
     def read_word(self):
         lo, hi = self.read_bytes(2)
@@ -59,12 +60,10 @@ class ObjectFile():
 
     def parse_header(self):
         signature = self.read_bytes(4)
-        self.read_byte()
         if sys.version_info.major == 2:
             signature = bytearray(signature)
         if signature not in (b"RGB5", b"RGB6"):
             raise ObjectParseError("not a valid RGBASM 5/6 object file")
-
         self.symbol_count = self.read_dword()
         self.section_count = self.read_dword()
         self.state = ParseState.HEADER_PARSED
