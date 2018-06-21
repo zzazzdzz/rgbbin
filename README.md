@@ -58,13 +58,13 @@ The dictionary format of symbol data:
 - *symid* - The symbol's ID (its index within the table in the object file)
 
 # Limitations
-The library is designed to work with the version 5 of the object file format, which was used by rgbasm v0.3.3. Object files compiled with the newer versions will not work with this software - however, support for them might be added incrementally in the future.
+The library is designed to work with versions 5 and 6 of the object file format, which are used by rgbasm v0.3.3 and higher (as of today, v0.3.7). Object files compiled with the newer versions might not work with this software - however, support for them might be added incrementally in the future.
 
 Only ROM and ROMX sections are recognized by the parser, so any sections you want to extract should have this type. If you want to have a section origin in RAM (for example $DA80), creating a ROM0 section with that origin will still work:
 ```
 SECTION "WRAM", ROM0[$DA80]
 ```
-The RPN commands used to create linking-time patches are not yet supported completely. This essentially means you're restricted to only using addition and subtraction in symbol math. For example `ld hl, symbol+1337` or `ld hl, symbol-1337` will work fine, but `ld hl, symbol*2` will fail with an "unsupported RPN command error". Note that constant calculations are resolved by the compiler and unaffected by this error (`ld hl, $1234*2` or `ld a, 64/8` will work). Again, better support for RPN commands might be added in the future.
+The RPN commands used to create linking-time patches are not supported completely. This essentially means you're restricted to only using specific operations in symbol math. For example `ld hl, symbol+1337` or `ld hl, symbol-1337` will work fine, but performing other, obscure arithmetic on `symbol` might fail with an "unsupported RPN command error". Note that constant calculations are resolved by the compiler and unaffected by this error (all arithmetic on constants, like `ld a, (64*8)<<2` will work). Again, better support for RPN commands might be added in the future.
 
 All sections must have their origins explicitly defined. Sections with dynamic origins are not supported.
 
