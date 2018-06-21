@@ -1,5 +1,13 @@
 import rgbbin.logger as logger
 import rgbbin.rpn as rpn
+import sys
+
+def read(f,args):
+    #print(args)
+    if sys.version_info.major==2:
+        return list(ord(c) for c in f.read(*args))
+    else:
+        return f.read(*args)
 
 class ObjectParseError(Exception):
     pass
@@ -28,18 +36,20 @@ class ObjectFile():
         self.f.close()
 
     def read_byte(self):
-        return self.f.read(1)[0]
+        return read(self.f,[1])[0]
 
     def read_bytes(self, l):
-        return self.f.read(l)
+        return read(self.f,[l])
 
     def read_word(self):
-        lo, hi = self.f.read(2)
+        lo, hi = self.read_bytes(2)
+        #print(lo,hi)
         return lo + hi*256
 
     def read_dword(self):
         lo = self.read_word()
         hi = self.read_word()
+        #print(lo,hi)
         return lo + hi*65536
 
     def read_string(self):
@@ -51,9 +61,12 @@ class ObjectFile():
         return result
 
     def parse_header(self):
-        signature = self.read_bytes(4)
-        if signature != b"RGB5":
-            raise ObjectParseError("not a valid RGBASM 5 object file")
+        signature = self.read_bytes(3)
+        self.read_byte()
+        if sys.version_info.major==2:
+            signature = bytearray(signature)
+        if signature != b"RGB":
+            raise ObjectParseError("not a valid RGBASM object file")
 
         self.symbol_count = self.read_dword()
         self.section_count = self.read_dword()
@@ -62,7 +75,9 @@ class ObjectFile():
     def parse_symbols(self):
         if self.state < ParseState.HEADER_PARSED:
             raise ParseOrderError("header has to be parsed first")
+        #print("ping")
         for i in range(0, self.symbol_count):
+            #print("pong")
             symbol_name = self.read_string()
             symbol_type = self.read_byte()
             if symbol_type == 1:
@@ -106,7 +121,7 @@ class ObjectFile():
                 patch_offset = self.read_dword()
                 patch_type = self.read_byte()
                 patch_rpnsize = self.read_dword()
-                patch_rpn = self.read_bytes(patch_rpnsize)
+                patch_rpn = bytearray(self.read_bytes(patch_rpnsize))
                 section_patches.append({
                     "source": "%s:%i" % (patch_file, patch_line),
                     "offset": patch_offset,
@@ -137,8 +152,10 @@ class ObjectFile():
                 elif patch['type'] == 1:
                     section['data'][patch['offset']] = value % 256
                     section['data'][patch['offset']+1] = value // 256
-                else:
+                elif patch['type'] == 2:
                     raise ObjectParseError("unsupported 32-bit dword patch")
+                elif patch['type'] == 3:
+                    section['data'][patch['offset']] = value-(section['origin']+patch['offset']+1)
         self.state = ParseState.PATCHES_PARSED
 
     def parse_all(self):
