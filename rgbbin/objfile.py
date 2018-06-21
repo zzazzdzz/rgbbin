@@ -2,9 +2,8 @@ import rgbbin.logger as logger
 import rgbbin.rpn as rpn
 import sys
 
-def read(f,args):
-    #print(args)
-    if sys.version_info.major==2:
+def read(f, args):
+    if sys.version_info.major == 2:
         return list(ord(c) for c in f.read(*args))
     else:
         return f.read(*args)
@@ -43,13 +42,11 @@ class ObjectFile():
 
     def read_word(self):
         lo, hi = self.read_bytes(2)
-        #print(lo,hi)
         return lo + hi*256
 
     def read_dword(self):
         lo = self.read_word()
         hi = self.read_word()
-        #print(lo,hi)
         return lo + hi*65536
 
     def read_string(self):
@@ -61,12 +58,12 @@ class ObjectFile():
         return result
 
     def parse_header(self):
-        signature = self.read_bytes(3)
+        signature = self.read_bytes(4)
         self.read_byte()
-        if sys.version_info.major==2:
+        if sys.version_info.major == 2:
             signature = bytearray(signature)
-        if signature != b"RGB":
-            raise ObjectParseError("not a valid RGBASM object file")
+        if signature not in (b"RGB5", b"RGB6"):
+            raise ObjectParseError("not a valid RGBASM 5/6 object file")
 
         self.symbol_count = self.read_dword()
         self.section_count = self.read_dword()
@@ -75,9 +72,7 @@ class ObjectFile():
     def parse_symbols(self):
         if self.state < ParseState.HEADER_PARSED:
             raise ParseOrderError("header has to be parsed first")
-        #print("ping")
         for i in range(0, self.symbol_count):
-            #print("pong")
             symbol_name = self.read_string()
             symbol_type = self.read_byte()
             if symbol_type == 1:
@@ -155,7 +150,8 @@ class ObjectFile():
                 elif patch['type'] == 2:
                     raise ObjectParseError("unsupported 32-bit dword patch")
                 elif patch['type'] == 3:
-                    section['data'][patch['offset']] = value-(section['origin']+patch['offset']+1)
+                    position = section['origin'] + patch['offset'] + 1
+                    section['data'][patch['offset']] = value - position
         self.state = ParseState.PATCHES_PARSED
 
     def parse_all(self):

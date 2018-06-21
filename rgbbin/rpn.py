@@ -1,7 +1,6 @@
 import struct
 
 class RPNError(NotImplementedError):
-    # this class exists for more specific error messages with the RPN
     pass
 
 def parse(objfile, x):
